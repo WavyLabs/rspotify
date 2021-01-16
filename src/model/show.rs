@@ -1,13 +1,27 @@
 use super::image::Image;
 use super::page::Page;
+use crate::model::{from_duration_ms, to_duration_ms, CopyrightType, DatePrecision};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::time::Duration;
 
-/// Show object(simplified)
-/// [Show object simplified](https://developer.spotify.com/documentation/web-api/reference/object-model/#show-object-simplified)
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Copyright object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#copyright-object)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Copyright {
+    pub text: String,
+    #[serde(rename = "type")]
+    pub _type: CopyrightType,
+}
+
+/// Simplified show object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#show-object-simplified)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SimplifiedShow {
     pub available_markets: Vec<String>,
-    pub copyrights: Vec<HashMap<String, String>>,
+    pub copyrights: Vec<Copyright>,
     pub description: String,
     pub explicit: bool,
     pub external_urls: HashMap<String, String>,
@@ -24,22 +38,30 @@ pub struct SimplifiedShow {
     pub uri: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SeversalSimplifiedShows {
+/// SimplifiedShows wrapped by `Vec`
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/shows/get-several-shows/)
+#[derive(Deserialize)]
+pub(in crate) struct SeversalSimplifiedShows {
     pub shows: Vec<SimplifiedShow>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Saved show object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#saved-show-object)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Show {
     pub added_at: String,
     pub show: SimplifiedShow,
 }
 
-/// [Show object(full)](https://developer.spotify.com/documentation/web-api/reference/object-model/#show-object-full)
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Full show object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#show-object-full)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FullShow {
     pub available_markets: Vec<String>,
-    pub copyrights: Vec<HashMap<String, String>>,
+    pub copyrights: Vec<Copyright>,
     pub description: String,
     pub explicit: bool,
     pub episodes: Page<SimplifiedEpisode>,
@@ -57,12 +79,19 @@ pub struct FullShow {
     pub uri: String,
 }
 
-/// [Episode object simplified](https://developer.spotify.com/documentation/web-api/reference/object-model/#episode-object-simplified)
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Simplified episode object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#episode-object-simplified)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SimplifiedEpisode {
     pub audio_preview_url: Option<String>,
     pub description: String,
-    pub duration_ms: u32,
+    #[serde(
+        deserialize_with = "from_duration_ms",
+        serialize_with = "to_duration_ms",
+        rename = "duration_ms"
+    )]
+    pub duration: Duration,
     pub explicit: bool,
     pub external_urls: HashMap<String, String>,
     pub href: String,
@@ -70,24 +99,33 @@ pub struct SimplifiedEpisode {
     pub images: Vec<Image>,
     pub is_externally_hosted: bool,
     pub is_playable: bool,
-    /// Note: This field is deprecated and might be removed in the future. Please use the languages field instead
+    #[deprecated(
+        note = "This `language` field is deprecated and might be removed in the future by Spotify. Please use the languages field instead"
+    )]
     pub language: String,
     pub languages: Vec<String>,
     pub name: String,
     pub release_date: String,
-    pub release_date_precision: String,
+    pub release_date_precision: DatePrecision,
     pub resume_point: Option<ResumePoint>,
     #[serde(rename = "type")]
     pub _type: String,
     pub uri: String,
 }
 
-/// [Episode object full](https://developer.spotify.com/documentation/web-api/reference/object-model/#episode-object-full)
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Full episode object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#episode-object-full)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FullEpisode {
     pub audio_preview_url: Option<String>,
     pub description: String,
-    pub duration_ms: u32,
+    #[serde(
+        deserialize_with = "from_duration_ms",
+        serialize_with = "to_duration_ms",
+        rename = "duration_ms"
+    )]
+    pub duration: Duration,
     pub explicit: bool,
     pub external_urls: HashMap<String, String>,
     pub href: String,
@@ -100,21 +138,28 @@ pub struct FullEpisode {
     pub languages: Vec<String>,
     pub name: String,
     pub release_date: String,
-    pub release_date_precision: String,
+    pub release_date_precision: DatePrecision,
     pub resume_point: Option<ResumePoint>,
     pub show: SimplifiedShow,
     #[serde(rename = "type")]
     pub _type: String,
     pub uri: String,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SeveralEpisodes {
     pub episodes: Vec<FullEpisode>,
 }
 
-/// [](https://developer.spotify.com/documentation/web-api/reference/object-model/#resume-point-object)
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Resume point object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#resume-point-object)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ResumePoint {
     pub fully_played: bool,
-    pub resume_position_ms: u32,
+    #[serde(
+        deserialize_with = "from_duration_ms",
+        serialize_with = "to_duration_ms",
+        rename = "resume_position_ms"
+    )]
+    pub resume_position: Duration,
 }

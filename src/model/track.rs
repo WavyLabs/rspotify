@@ -1,21 +1,30 @@
 //! All kinds of tracks object
 use chrono::prelude::*;
+use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
-use super::album::Restrictions;
 use super::album::SimplifiedAlbum;
 use super::artist::SimplifiedArtist;
-use crate::senum::Type;
-///[track object full](https://developer.spotify.com/web-api/object-model/#track-object-full)
-#[derive(Clone, Debug, Serialize, Deserialize)]
+use super::Restriction;
+use crate::model::Type;
+use crate::model::{from_duration_ms, to_duration_ms};
+/// Full track object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-full)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct FullTrack {
     pub album: SimplifiedAlbum,
     pub artists: Vec<SimplifiedArtist>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub available_markets: Vec<String>,
     pub disc_number: i32,
-    pub duration_ms: u32,
+    #[serde(
+        deserialize_with = "from_duration_ms",
+        serialize_with = "to_duration_ms",
+        rename = "duration_ms"
+    )]
+    pub duration: Duration,
     pub explicit: bool,
     pub external_ids: HashMap<String, String>,
     pub external_urls: HashMap<String, String>,
@@ -27,7 +36,7 @@ pub struct FullTrack {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub linked_from: Option<TrackLink>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub restrictions: Option<Restrictions>,
+    pub restrictions: Option<Restriction>,
     pub name: String,
     pub popularity: u32,
     pub preview_url: Option<String>,
@@ -37,10 +46,10 @@ pub struct FullTrack {
     pub uri: String,
 }
 
-/// [link to track link] https://developer.spotify.com/documentation/web-api/reference/object-model/#track-link
-/// Track Link
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Track link object
+///
+/// [Reference] https://developer.spotify.com/documentation/web-api/reference/object-model/#track-link
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct TrackLink {
     pub external_urls: HashMap<String, String>,
     pub href: String,
@@ -50,23 +59,40 @@ pub struct TrackLink {
     pub uri: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FullTracks {
+/// Full track wrapped by `Vec`
+///
+/// [Reference](https://developer.spotify.com/web-api/get-several-tracks/)
+#[derive(Deserialize)]
+pub(in crate) struct FullTracks {
     pub tracks: Vec<FullTrack>,
 }
-///[track object simplified](https://developer.spotify.com/web-api/object-model/#track-object-simplified)
-#[derive(Clone, Debug, Serialize, Deserialize)]
+
+/// Simplified track object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#track-object-simplified)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SimplifiedTrack {
     pub artists: Vec<SimplifiedArtist>,
     pub available_markets: Option<Vec<String>>,
     pub disc_number: i32,
-    pub duration_ms: u32,
+    #[serde(
+        deserialize_with = "from_duration_ms",
+        serialize_with = "to_duration_ms",
+        rename = "duration_ms"
+    )]
+    pub duration: Duration,
     pub explicit: bool,
     pub external_urls: HashMap<String, String>,
     #[serde(default)]
     pub href: Option<String>,
     pub id: Option<String>,
     pub is_local: bool,
+    // These three fields are only present when track relinking is applied.
+    //-------------------//
+    pub is_playable: Option<bool>,
+    pub linked_from: Option<TrackLink>,
+    pub restrictions: Option<Restriction>,
+    //-------------------//
     pub name: String,
     pub preview_url: Option<String>,
     pub track_number: u32,
@@ -75,8 +101,10 @@ pub struct SimplifiedTrack {
     pub uri: String,
 }
 
-///[saved track object](https://developer.spotify.com/web-api/object-model/#saved-track-object)
-#[derive(Clone, Debug, Serialize, Deserialize)]
+/// Saved track object
+///
+/// [Reference](https://developer.spotify.com/documentation/web-api/reference/object-model/#saved-track-object)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SavedTrack {
     pub added_at: DateTime<Utc>,
     pub track: FullTrack,
