@@ -45,6 +45,7 @@ pub struct TokenInfo {
     pub expires_in: u32,
     pub expires_at: Option<i64>,
     pub refresh_token: Option<String>,
+    #[serde(default)]
     pub scope: String,
 }
 impl TokenInfo {
